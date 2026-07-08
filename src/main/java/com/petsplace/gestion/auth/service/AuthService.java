@@ -74,7 +74,7 @@ public class AuthService {
         UserDetails userDetails = org.springframework.security.core.userdetails.User.builder()
                 .username(usuario.getEmail())
                 .password(usuario.getPassword())
-                .authorities("ROLE_" + usuario.getRol().getNombre())
+                .authorities("ROLE_" + usuario.getRol().getNombre().toUpperCase())
                 .build();
 
         // 4. Emitir el token firmado digitalmente

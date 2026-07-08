@@ -1,4 +1,5 @@
-/* Reset de estilos globales de Vite para permitir layouts de pantalla completa */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
 html,
 body,
 #root {
@@ -8,4 +9,211 @@ body,
   height: 100%;
   min-height: 100vh;
   box-sizing: border-box;
+  font-family: 'Outfit', sans-serif !important;
+  background-color: #f7faf9; /* Un fondo grisáceo-menta muy suave y relajante */
 }
+
+/* Animación de entrada fluida y acogedora */
+@keyframes bubbleIn {
+  from { opacity: 0; transform: scale(0.985) translateY(4px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+main > div {
+  animation: bubbleIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Scrollbars amigables */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8b2c1;
+}
+
+/* Scrollbar para el Sidebar Oscuro */
+aside div.overflow-y-auto::-webkit-scrollbar {
+  width: 10px;
+}
+aside div.overflow-y-auto::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 99px;
+}
+aside div.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: #0d9488;
+  border: 2px solid #020617;
+  border-radius: 99px;
+}
+aside div.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: #0f766e;
+}
+
+/* Scrollbar para el Contenido Principal (Páginas) */
+main::-webkit-scrollbar {
+  width: 10px;
+}
+main::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.02);
+  border-radius: 99px;
+}
+main::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border: 2px solid #f8fafc;
+  border-radius: 99px;
+}
+main::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Tarjetas Orgánicas y Redondeadas (Estilo Clínica Veterinaria Amigable) */
+.bg-white.rounded-2xl {
+  background: #ffffff !important;
+  border: 1px solid rgba(20, 184, 166, 0.08) !important; /* Toque suave de menta */
+  border-radius: 1.5rem !important; /* Más redondeado y amigable */
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.015) !important;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.bg-white.rounded-2xl:hover {
+  transform: translateY(-3px) scale(1.005);
+  box-shadow: 0 12px 28px rgba(20, 184, 166, 0.05), 0 4px 10px rgba(15, 23, 42, 0.01) !important;
+  border-color: rgba(20, 184, 166, 0.25) !important;
+}
+
+/* Inputs Redondeados y Suaves */
+input, select, textarea {
+  font-family: 'Outfit', sans-serif !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 0.85rem !important; /* Más circular */
+  transition: all 0.2s ease !important;
+  background-color: #fafdfc !important;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: #14b8a6 !important; /* Enfoque menta */
+  box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.08) !important;
+  background-color: #ffffff !important;
+  outline: none !important;
+}
+
+/* Tablas Amigables */
+thead tr {
+  background-color: #f0fdfa !important; /* Fondo menta suave */
+  border-bottom: 2px solid #ccfbf1 !important;
+}
+
+th {
+  font-weight: 800 !important;
+  color: #0f766e !important; /* Texto verde bosque */
+}
+
+/* Hover de Botones de Página - Amarillo/Mostaza elegante */
+main button, .fixed form button {
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  border-radius: 0.85rem !important;
+}
+
+main button:hover:not(:disabled), .fixed form button:hover:not(:disabled) {
+  transform: translateY(-1px) scale(1.03);
+  filter: brightness(1.03);
+  box-shadow: 0 6px 18px rgba(217, 119, 6, 0.2), 0 0 10px rgba(234, 179, 8, 0.15); /* Resplandor Amarillo/Mostaza */
+  color: #d97706 !important; /* Letra cambia a mostaza */
+}
+
+/* Botones primarios (conservar blanco para legibilidad) */
+main button.bg-cyan-500:hover:not(:disabled),
+main button[class*="bg-cyan"]:hover:not(:disabled),
+main button[class*="bg-gradient"]:hover:not(:disabled),
+.fixed form button[class*="bg-cyan"]:hover:not(:disabled),
+main button.bg-teal-500:hover:not(:disabled),
+main button[class*="bg-teal"]:hover:not(:disabled) {
+  color: #ffffff !important;
+  box-shadow: 0 6px 20px rgba(20, 184, 166, 0.25) !important;
+}
+
+main button:active:not(:disabled) {
+  transform: translateY(0.5px) scale(0.97);
+}
+
+/* DISEÑO DE SIDEBAR (Oscuro Premium Anterior) */
+aside {
+  background: radial-gradient(circle at 10% 10%, #030712 0%, #0b0f19 100%) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+aside button {
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  border-radius: 0.85rem !important;
+}
+
+/* Hover de ítems del Sidebar */
+aside ul button:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+  color: #f1f5f9 !important;
+  transform: translateX(4px) !important;
+  box-shadow: none !important;
+}
+
+/* Estilo para ítem seleccionado en Sidebar (Cian Brillante) */
+aside ul button[class*="from-cyan-950"] {
+  background: linear-gradient(90deg, rgba(8, 145, 178, 0.12) 0%, rgba(8, 145, 178, 0.01) 100%) !important;
+  color: #22d3ee !important;
+  border-left: 3.5px solid #06b6d4 !important;
+  border-color: rgba(6, 182, 212, 0.25) !important;
+  border-radius: 0 12px 12px 0 !important;
+  padding-left: calc(0.75rem - 3.5px) !important;
+  box-shadow: none !important;
+}
+
+aside ul button[class*="from-cyan-950"]:hover:not(:disabled) {
+  transform: none !important;
+  color: #22d3ee !important;
+}
+
+/* Caja de Perfil del Usuario en Sidebar */
+aside [class*="bg-slate-900/60"] {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Footer del Sidebar */
+aside [class*="border-t border-slate-900"] {
+  border-top-color: rgba(255, 255, 255, 0.08) !important;
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Logout del Sidebar */
+aside button[class*="hover:bg-red-950"]:hover {
+  background: rgba(239, 68, 68, 0.08) !important;
+  color: #f87171 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Modo accesible */
+aside button[class*="Modo Accessible"]:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* RESET GLOBAL DE BOTONES CONTRA CONFLICTOS DE BULMA */
+button {
+  background-color: transparent;
+  background-image: none;
+  border-width: 0;
+  border-style: none;
+  box-shadow: none;
+}
+
+

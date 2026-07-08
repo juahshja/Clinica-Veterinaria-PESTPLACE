@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const PUG_URL =
@@ -107,8 +107,17 @@ function Brand() {
 }
 
 export default function Register() {
-    const { registerUser } = useAuth();
+    const { token, registerUser } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+
+    // Redireccionar al Dashboard si ya existe sesión activa
+    useEffect(() => {
+        if (token) {
+            const from = location.state?.from?.pathname || "/";
+            navigate(from, { replace: true });
+        }
+    }, [token, navigate, location]);
 
     const [showPass, setShowPass] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
@@ -125,7 +134,7 @@ export default function Register() {
     const roles = [
         { key: "admin", label: "Administración", dbName: "Administrador" },
         { key: "vet", label: "Veterinario", dbName: "Veterinario" },
-        { key: "staff", label: "Personal de atención", dbName: "Personal de atención" },
+        { key: "staff", label: "Personal de atención", dbName: "Personal de atencion" },
     ];
 
     const handleSubmit = async (e) => {

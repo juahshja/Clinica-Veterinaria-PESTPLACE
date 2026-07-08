@@ -51,10 +51,16 @@ public class SecurityConfig {
 
                 // 3. Reglas de autorización de las URLs de Petsplace
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/login").permitAll() // Solo el Login es 100% libre
-                        .requestMatchers("/api/v1/auth/register").permitAll() // Permitir el registro público de nuevos usuarios
-                        .requestMatchers("/error").permitAll() // Permitir la ruta de error del contenedor
-                        .anyRequest().authenticated() // Citas, Historial, Medicamentos, etc. ¡Exigen token!
+                        .requestMatchers("/api/v1/auth/login").permitAll()
+                        .requestMatchers("/api/v1/auth/register").permitAll()
+                        .requestMatchers("/error").permitAll()
+                        .requestMatchers("/api/v1/usuarios", "/api/v1/usuarios/**").hasAnyRole("ADMIN", "ADMINISTRACIÓN", "ADMINISTRACION", "ADMINISTRADOR")
+                        .requestMatchers("/api/v1/auditoria", "/api/v1/auditoria/**").hasAnyRole("ADMIN", "ADMINISTRACIÓN", "ADMINISTRACION", "ADMINISTRADOR")
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/configuraciones", "/api/v1/configuraciones/**").hasAnyRole("ADMIN", "ADMINISTRACIÓN", "ADMINISTRACION", "ADMINISTRADOR")
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/productos", "/api/v1/productos/**").hasAnyRole("ADMIN", "ADMINISTRACIÓN", "ADMINISTRACION", "ADMINISTRADOR")
+                        .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/v1/productos/**").hasAnyRole("ADMIN", "ADMINISTRACIÓN", "ADMINISTRACION", "ADMINISTRADOR")
+                        .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/v1/productos/**").hasAnyRole("ADMIN", "ADMINISTRACIÓN", "ADMINISTRACION", "ADMINISTRADOR")
+                        .anyRequest().authenticated()
                 )
                 // 4. Política de sesión SIN ESTADO (Stateless)
                 .sessionManagement(session -> session

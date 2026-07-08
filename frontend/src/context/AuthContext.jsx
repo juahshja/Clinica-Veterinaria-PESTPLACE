@@ -5,13 +5,13 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token') || null);
+  const [token, setToken] = useState(sessionStorage.getItem('token') || null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const verifyToken = async () => {
-      const storedToken = localStorage.getItem('token');
-      const storedUser = localStorage.getItem('user');
+      const storedToken = sessionStorage.getItem('token');
+      const storedUser = sessionStorage.getItem('user');
 
       if (storedToken && storedUser) {
         try {
@@ -22,15 +22,15 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
           console.error('Sesión inválida o expirada:', error);
           // Limpiar datos inválidos en caso de error
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
+          sessionStorage.removeItem('token');
+          sessionStorage.removeItem('user');
           setToken(null);
           setUser(null);
         }
       } else {
         // Limpieza si solo hay uno de los dos
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('user');
         setToken(null);
         setUser(null);
       }
@@ -45,9 +45,9 @@ export const AuthProvider = ({ children }) => {
       const data = await authService.login(email, password);
       const { token: jwtToken, ...userData } = data;
 
-      // Persistir token y datos de usuario en localStorage
-      localStorage.setItem('token', jwtToken);
-      localStorage.setItem('user', JSON.stringify(userData));
+      // Persistir token y datos de usuario en sessionStorage
+      sessionStorage.setItem('token', jwtToken);
+      sessionStorage.setItem('user', JSON.stringify(userData));
 
       setToken(jwtToken);
       setUser(userData);
@@ -71,8 +71,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logoutUser = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
     setToken(null);
     setUser(null);
   };

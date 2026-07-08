@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const PUG_URL =
@@ -108,8 +108,17 @@ function Brand() {
 
 
 export default function Login() {
-    const { loginUser } = useAuth();
+    const { token, loginUser } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+
+    // Redireccionar al Dashboard si ya existe sesión activa
+    useEffect(() => {
+        if (token) {
+            const from = location.state?.from?.pathname || "/";
+            navigate(from, { replace: true });
+        }
+    }, [token, navigate, location]);
 
     const [showPass, setShowPass] = useState(false);
     const [remember, setRemember] = useState(false);
@@ -144,7 +153,8 @@ export default function Login() {
 
         const result = await loginUser(email, password);
         if (result.success) {
-            navigate("/");
+            const from = location.state?.from?.pathname || "/";
+            navigate(from, { replace: true });
         } else {
             setError(result.message);
             setLoading(false);
@@ -272,16 +282,7 @@ export default function Login() {
                     </button>
 
                     <p className="text-center text-[0.83rem] mt-5" style={{ color: "#7a8fa6" }}>
-                        ¿No tienes una cuenta?{" "}
-                        <Link
-                            to="/register"
-                            className="font-semibold bg-transparent border-none p-0 cursor-pointer transition-colors duration-150"
-                            style={{ color: "#29b6d8" }}
-                            onMouseEnter={(e) => (e.currentTarget.style.color = "#1a9ab8")}
-                            onMouseLeave={(e) => (e.currentTarget.style.color = "#29b6d8")}
-                        >
-                            Regístrate
-                        </Link>
+                        ¿No tienes acceso? Solicítalo al administrador de la clínica.
                     </p>
                 </form>
             </div>

@@ -11,7 +11,7 @@ const login = async (email, password) => {
 };
 
 const register = async (nombre, email, password, rol = 'USER') => {
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
   const response = await axios.post(`${API_URL}/register`, { nombre, email, password, rol }, { headers });
   return response.data; // Retorna: { message }
