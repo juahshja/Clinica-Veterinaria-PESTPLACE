@@ -306,6 +306,11 @@ export const userService = {
   delete: async (id) => {
     await api.delete(`/api/v1/usuarios/${id}`);
     addLocalAuditLog('SISTEMA', 'Eliminación de Usuario', `Eliminó usuario del sistema ID: ${id}`);
+  },
+  resetPassword: async (id) => {
+    const res = await api.post(`/api/v1/usuarios/${id}/restablecer-password`);
+    addLocalAuditLog('SISTEMA', 'Restablecer Contraseña', `Restableció contraseña del usuario ID: ${id}`);
+    return res.data;
   }
 };
 

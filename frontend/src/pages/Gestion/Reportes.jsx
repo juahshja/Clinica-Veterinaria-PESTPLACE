@@ -215,13 +215,13 @@ export default function Reportes() {
             
             <div className="flex justify-between items-end h-56 pt-6 px-4 border-b border-slate-100 relative">
               {monthlyRevenue.map((m, idx) => (
-                <div key={idx} className="flex flex-col items-center w-12 group">
-                  <span className="text-[9px] font-bold text-slate-400 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div key={idx} className="flex flex-col items-center w-12 h-full justify-end group">
+                  <span className="text-[9px] font-extrabold text-slate-500 mb-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                     {m.valor}
                   </span>
                   <div 
                     style={{ height: m.altura }} 
-                    className="w-8 bg-gradient-to-t from-[#0d9488]/80 to-[#22d3ee]/80 hover:from-[#0f766e] hover:to-[#06b6d4] rounded-t-lg transition-all duration-300"
+                    className="w-8 bg-gradient-to-t from-[#0d9488]/80 to-[#22d3ee]/80 hover:from-[#0f766e] hover:to-[#06b6d4] rounded-t-lg transition-all duration-300 relative"
                   />
                   <span className="text-[10px] font-bold text-slate-600 mt-2">{m.mes}</span>
                 </div>

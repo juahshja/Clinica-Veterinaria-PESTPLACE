@@ -10,8 +10,29 @@ export default function DashboardLayout() {
   const { user, logoutUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [toasts, setToasts] = useState([]);
+
+  // Controlar responsive de la barra lateral al cargar y redimensionar
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1024) {
+        setSidebarCollapsed(true);
+      } else {
+        setSidebarCollapsed(false);
+      }
+    };
+    handleResize(); // Ejecución inicial
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Cerrar sidebar automáticamente en móvil cuando cambie la ruta
+  useEffect(() => {
+    if (window.innerWidth < 1024) {
+      setSidebarCollapsed(true);
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     registerToastListener((message, type) => {
@@ -66,13 +87,24 @@ export default function DashboardLayout() {
 
   return (
     <div 
-      className="flex w-screen overflow-hidden bg-slate-50 font-sans"
+      className="flex w-screen overflow-hidden bg-slate-50 font-sans relative"
       style={{ height: '100vh' }}
     >
+      {/* Fondo oscuro traslúcido para móviles cuando la barra lateral está desplegada */}
+      {!sidebarCollapsed && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300"
+          onClick={() => setSidebarCollapsed(true)}
+        />
+      )}
       
       {/* SIDEBAR */}
       <aside 
-        className={`${sidebarCollapsed ? 'w-16' : 'w-64'} bg-slate-950 flex flex-col justify-between text-slate-400 border-r border-slate-900 select-none flex-shrink-0 transition-all duration-300`}
+        className={`fixed inset-y-0 left-0 z-50 lg:relative lg:translate-x-0 ${
+          sidebarCollapsed 
+            ? '-translate-x-full lg:w-16' 
+            : 'translate-x-0 lg:w-64'
+        } w-64 bg-slate-950 flex flex-col justify-between text-slate-400 border-r border-slate-900 select-none flex-shrink-0 transition-all duration-300`}
         style={{ height: '100vh', overflow: 'hidden' }}
       >
         <div 
@@ -190,7 +222,7 @@ export default function DashboardLayout() {
 
         {/* CONTAINER DINÁMICO */}
         <main 
-          className="flex-1 p-6 bg-slate-50"
+          className="flex-1 p-4 md:p-6 bg-slate-50"
           style={{ height: 'calc(100vh - 64px)', overflowY: 'auto' }}
         >
           <Outlet />

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { userService } from '../../services/api';
-import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiUser, FiMail, FiShield, FiInfo, FiX } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiUser, FiMail, FiShield, FiInfo, FiX, FiKey, FiCopy } from 'react-icons/fi';
 
 export default function Usuarios() {
   const [usuarios, setUsuarios] = useState([]);
@@ -9,13 +9,13 @@ export default function Usuarios() {
   const [roleFilter, setRoleFilter] = useState('TODOS');
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  const [resetSuccessData, setResetSuccessData] = useState(null); // { nombre: '...', tempPassword: '...' }
 
   // Form Fields
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rol, setRol] = useState('Veterinario');
-  const [confirmPassword, setConfirmPassword] = useState('');
 
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -41,7 +41,6 @@ export default function Usuarios() {
     setEmail('');
     setPassword('');
     setRol('Veterinario');
-    setConfirmPassword('');
     setShowModal(true);
   };
 
@@ -51,7 +50,6 @@ export default function Usuarios() {
     setEmail(user.email || '');
     setPassword('[PROTEGIDO]'); // Contraseña enmascarada
     setRol(user.rol?.nombre || 'Veterinario');
-    setConfirmPassword('');
     setShowModal(true);
   };
 
@@ -59,6 +57,23 @@ export default function Usuarios() {
     if (window.confirm("¿Estás seguro de eliminar este usuario del sistema? Perderá acceso de inmediato.")) {
       await userService.delete(id);
       loadUsuarios();
+    }
+  };
+
+  const handleResetPassword = async (user) => {
+    if (window.confirm(`¿Deseas restablecer la contraseña para ${user.nombre}? Se generará una nueva contraseña temporal.`)) {
+      try {
+        const res = await userService.resetPassword(user.id);
+        if (res && res.success) {
+          setResetSuccessData({
+            nombre: user.nombre,
+            tempPassword: res.tempPassword
+          });
+        }
+      } catch (err) {
+        console.error("Error resetting password", err);
+        alert("Ocurrió un error al restablecer la contraseña.");
+      }
     }
   };
 
@@ -76,8 +91,7 @@ export default function Usuarios() {
       nombre,
       email,
       rol,
-      ...(password !== '[PROTEGIDO]' && password.trim() !== '' ? { password } : {}),
-      ...(editingUser ? { confirmPassword } : {})
+      ...(password !== '[PROTEGIDO]' && password.trim() !== '' ? { password } : {})
     };
 
     try {
@@ -230,6 +244,13 @@ export default function Usuarios() {
                     </td>
                     <td className="py-3.5 px-5 text-right space-x-1">
                       <button
+                        onClick={() => handleResetPassword(u)}
+                        className="h-9 w-9 rounded-full !border-0 !bg-transparent hover:!bg-cyan-50 text-slate-400 hover:text-cyan-600 transition-all duration-150 active:scale-90 inline-flex items-center justify-center cursor-pointer"
+                        title="Restablecer Contraseña"
+                      >
+                        <FiKey className="w-4 h-4" />
+                      </button>
+                      <button
                         onClick={() => handleOpenEdit(u)}
                         className="h-9 w-9 rounded-full !border-0 !bg-transparent hover:!bg-slate-100 text-slate-400 hover:text-slate-700 transition-all duration-150 active:scale-90 inline-flex items-center justify-center cursor-pointer"
                         title="Editar"
@@ -316,25 +337,6 @@ export default function Usuarios() {
                   />
                 </div>
 
-                {/* Contraseña de Confirmación (Solo al editar) */}
-                {editingUser && (
-                  <div className="flex flex-col gap-2 p-3.5 bg-rose-50/50 border border-rose-100 rounded-xl">
-                    <label className="font-extrabold text-rose-800 uppercase tracking-wider text-[9px]">
-                      Contraseña Actual del Usuario (Requerido para autorizar)
-                    </label>
-                    <input
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Ingrese la contraseña vigente de esta cuenta"
-                      className="h-10 border border-rose-200 rounded-xl px-4 focus:outline-none focus:border-rose-450 text-xs font-bold text-slate-700 bg-white"
-                      required
-                    />
-                    <span className="text-[9px] text-rose-500 font-semibold leading-tight">
-                      ⚠️ Requiere validar la identidad del usuario ingresando su contraseña actual antes de guardar.
-                    </span>
-                  </div>
-                )}
 
                 {/* Rol */}
                 <div className="flex flex-col gap-1.5">
@@ -368,6 +370,49 @@ export default function Usuarios() {
                 </div>
               </form>
             </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* MODAL: CONTRASEÑA RESTABLECIDA CON ÉXITO */}
+      {resetSuccessData && createPortal(
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl border border-slate-150 shadow-2xl max-w-sm w-full p-6 text-center animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-14 h-14 rounded-full bg-cyan-50 border border-cyan-100 flex items-center justify-center text-2xl mx-auto mb-4 text-cyan-500">
+              🔐
+            </div>
+            <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">
+              Contraseña Restablecida
+            </h3>
+            <p className="text-[11px] text-slate-400 font-semibold mt-2 leading-relaxed">
+              Se ha generado con éxito una contraseña temporal para el usuario <strong className="text-slate-700">{resetSuccessData.nombre}</strong>.
+            </p>
+
+            <div className="my-5 p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between gap-4">
+              <span className="font-mono text-sm font-black text-slate-800 tracking-wider">
+                {resetSuccessData.tempPassword}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(resetSuccessData.tempPassword);
+                  alert("¡Contraseña copiada al portapapeles!");
+                }}
+                className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-white border border-slate-200 text-[10px] font-bold text-slate-500 hover:text-cyan-500 hover:border-cyan-200 active:scale-95 transition-all cursor-pointer shadow-sm"
+              >
+                <FiCopy className="w-3.5 h-3.5" />
+                <span>Copiar</span>
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setResetSuccessData(null)}
+              className="w-full h-10 bg-cyan-400 hover:bg-cyan-500 text-white rounded-xl text-xs font-black shadow-md shadow-cyan-500/10 active:scale-[0.97] transition-all border-0 cursor-pointer"
+            >
+              Aceptar y Cerrar
+            </button>
           </div>
         </div>,
         document.body

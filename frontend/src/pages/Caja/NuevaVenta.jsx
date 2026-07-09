@@ -5,8 +5,10 @@ import {
   FiShoppingCart, FiX, FiImage 
 } from 'react-icons/fi';
 import { productService, boletaService, clientService, petService, billingService } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 export default function NuevaVenta() {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -188,12 +190,15 @@ export default function NuevaVenta() {
 
     const payload = {
       nroBoleta: `B001-${Math.floor(10000 + Math.random() * 90000)}`,
-      fecha: new Date().toISOString(),
+      fecha: (() => {
+        const tzoffset = (new Date()).getTimezoneOffset() * 60000;
+        return (new Date(Date.now() - tzoffset)).toISOString().slice(0, -1);
+      })(),
       clienteNombre: cNombre,
       clienteDni: cDni,
       mascotaNombre: mNombre,
       metodoPago: paymentMethod,
-      cajero: 'admin',
+      cajero: user?.nombre || 'Administrador',
       estado: 'Activa',
       total: getTotal(),
       detalles: cart.map(x => ({

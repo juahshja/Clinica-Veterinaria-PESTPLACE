@@ -4,6 +4,8 @@ import com.petsplace.gestion.auth.model.Rol;
 import com.petsplace.gestion.auth.model.Usuario;
 import com.petsplace.gestion.auth.repository.RolRepository;
 import com.petsplace.gestion.auth.repository.UsuarioRepository;
+import com.petsplace.gestion.repository.CitaRepository;
+import com.petsplace.gestion.repository.ConsultaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,6 +27,12 @@ public class UsuarioController {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private CitaRepository citaRepository;
+
+    @Autowired
+    private ConsultaRepository consultaRepository;
 
     @GetMapping
     public List<Usuario> listarTodos() {
@@ -76,20 +84,21 @@ public class UsuarioController {
     @PutMapping("/{id}")
     public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody Map<String, String> payload) {
         return usuarioRepository.findById(id).map(usuario -> {
-            String confirmPassword = payload.get("confirmPassword");
-            if (confirmPassword == null || confirmPassword.trim().isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Debe ingresar la contraseña de ese usuario para autorizar los cambios"));
-            }
-            if (!passwordEncoder.matches(confirmPassword, usuario.getPassword())) {
-                return ResponseEntity.badRequest().body(Map.of("error", "La contraseña de confirmación ingresada es incorrecta"));
-            }
-
             String nombre = payload.get("nombre");
             String email = payload.get("email");
             String password = payload.get("password");
             String nombreRol = payload.get("rol");
 
-            if (nombre != null) usuario.setNombre(nombre);
+            if (nombre != null && !nombre.trim().isEmpty() && !nombre.equalsIgnoreCase(usuario.getNombre())) {
+                String antiguoNombre = usuario.getNombre();
+                usuario.setNombre(nombre);
+                try {
+                    citaRepository.actualizarNombreVeterinario(antiguoNombre, nombre);
+                    consultaRepository.actualizarNombreVeterinario(antiguoNombre, nombre);
+                } catch (Exception e) {
+                    System.err.println("Error actualizando nombres de veterinario en cascada: " + e.getMessage());
+                }
+            }
             if (email != null) {
                 // Verificar duplicados si cambia de email
                 if (!usuario.getEmail().equalsIgnoreCase(email) && usuarioRepository.findByEmail(email).isPresent()) {
@@ -109,6 +118,20 @@ public class UsuarioController {
             Usuario actualizado = usuarioRepository.save(usuario);
             actualizado.setPassword("[PROTEGIDO]");
             return ResponseEntity.ok(actualizado);
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/{id}/restablecer-password")
+    public ResponseEntity<?> restablecerPassword(@PathVariable Long id) {
+        return usuarioRepository.findById(id).map(usuario -> {
+            String tempPassword = "Pet" + (10000 + new java.util.Random().nextInt(90000));
+            usuario.setPassword(passwordEncoder.encode(tempPassword));
+            usuarioRepository.save(usuario);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "tempPassword", tempPassword,
+                "mensaje", "Contraseña restablecida exitosamente para " + usuario.getNombre()
+            ));
         }).orElse(ResponseEntity.notFound().build());
     }
 

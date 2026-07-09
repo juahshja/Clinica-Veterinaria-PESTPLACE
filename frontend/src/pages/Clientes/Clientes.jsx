@@ -173,8 +173,8 @@ export default function Clientes() {
 
       {/* MODAL: CREAR / EDITAR CLIENTE */}
       {showModal && createPortal(
-        <div className="fixed inset-0 bg-white z-[9999] overflow-y-auto flex flex-col p-6 sm:p-12 animate-in fade-in slide-in-from-bottom-5 duration-200">
-          <div className="max-w-xl mx-auto w-full flex-1 flex flex-col justify-between">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl border border-slate-150 shadow-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 animate-in fade-in zoom-in-95 duration-200 flex flex-col justify-between">
             <div>
               <div className="border-b border-slate-100 pb-5 flex items-center justify-between">
                 <div>
@@ -254,7 +254,7 @@ export default function Clientes() {
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
-                    className="flex-1 h-11 border border-slate-200 rounded-xl font-bold text-slate-500 hover:bg-slate-50 transition-all border-0 cursor-pointer"
+                    className="flex-1 h-11 !border !border-slate-200 bg-white rounded-xl font-bold text-slate-500 hover:bg-slate-50 transition-all cursor-pointer"
                   >
                     Cancelar
                   </button>

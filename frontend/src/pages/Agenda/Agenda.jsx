@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { appointmentService, petService, userService } from '../../services/api';
-import { FiPlus, FiCalendar, FiClock, FiUser, FiInfo, FiTrash2, FiX } from 'react-icons/fi';
+import { FiPlus, FiCalendar, FiClock, FiUser, FiInfo, FiTrash2, FiX, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
 const tabs = [
   { key: 'Pendiente', color: 'bg-amber-500 text-white' },
@@ -23,6 +23,72 @@ export default function Agenda() {
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [collisionWarning, setCollisionWarning] = useState('');
+
+  // Estados del Calendario Dinámico
+  const [currentYear, setCurrentYear] = useState(2026); // Default 2026
+  const [currentMonth, setCurrentMonth] = useState(6); // Julio is index 6
+
+  const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
+  const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
+  const getFirstDayOfMonth = (year, month) => {
+    let day = new Date(year, month, 1).getDay();
+    return day === 0 ? 6 : day - 1; // 0 = Lunes, 6 = Domingo
+  };
+
+  const handlePrevMonth = () => {
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear(prev => prev - 1);
+    } else {
+      setCurrentMonth(prev => prev - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear(prev => prev + 1);
+    } else {
+      setCurrentMonth(prev => prev + 1);
+    }
+  };
+
+  // Sincronizar el mes/año cuando cambia la fecha seleccionada
+  useEffect(() => {
+    if (selectedDate) {
+      const [y, m, d] = selectedDate.split('-').map(Number);
+      if (!isNaN(y) && !isNaN(m)) {
+        setCurrentYear(y);
+        setCurrentMonth(m - 1);
+      }
+    }
+  }, [selectedDate]);
+
+  // Búsqueda y Filtros
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filtroMascota, setFiltroMascota] = useState('');
+
+  // Mascotas filtradas para el dropdown
+  const filteredMascotasForSelect = mascotas.filter(pet => {
+    const searchStr = filtroMascota.toLowerCase();
+    const petName = (pet.nombre || '').toLowerCase();
+    const clientName = (pet.cliente?.nombre || '').toLowerCase();
+    const species = (pet.especie || '').toLowerCase();
+    return petName.includes(searchStr) || clientName.includes(searchStr) || species.includes(searchStr);
+  });
+
+  // Auto-seleccionar la primera mascota filtrada para evitar inconsistencias
+  useEffect(() => {
+    if (filteredMascotasForSelect.length > 0) {
+      const exists = filteredMascotasForSelect.some(p => p.id.toString() === mascotaId);
+      if (!exists) {
+        setMascotaId(filteredMascotasForSelect[0].id.toString());
+      }
+    } else {
+      setMascotaId('');
+    }
+  }, [filtroMascota, mascotas]);
 
   // Campos para nueva cita
   const [mascotaId, setMascotaId] = useState('');
@@ -105,8 +171,19 @@ export default function Agenda() {
     return citas.filter(c => c.estado === status).length;
   };
 
-  // Filtrar citas por pestaña seleccionada
-  const filteredCitas = citas.filter(c => c.estado === activeTab);
+  // Filtrar citas por pestaña seleccionada y término de búsqueda
+  const filteredCitas = citas.filter(c => {
+    const matchesTab = c.estado === activeTab;
+    if (!matchesTab) return false;
+    
+    const search = searchTerm.toLowerCase();
+    const petName = (c.mascota?.nombre || '').toLowerCase();
+    const clientName = (c.mascota?.cliente?.nombre || '').toLowerCase();
+    const vetName = (c.veterinario || '').toLowerCase();
+    const reason = (c.motivo || '').toLowerCase();
+    
+    return petName.includes(search) || clientName.includes(search) || vetName.includes(search) || reason.includes(search);
+  });
 
   const handleCreateCita = async (e) => {
     e.preventDefault();
@@ -137,8 +214,28 @@ export default function Agenda() {
   };
 
   const handleUpdateStatus = async (id, status) => {
-    await appointmentService.updateStatus(id, status);
-    loadCitasYPacientes();
+    // 1. Optimistic Update (instant UI feedback)
+    setCitas(prevCitas => 
+      prevCitas.map(c => c.id === id ? { ...c, estado: status } : c)
+    );
+    setTodasLasCitas(prevTodas => 
+      prevTodas.map(c => c.id === id ? { ...c, estado: status } : c)
+    );
+
+    try {
+      // 2. Call API in the background
+      await appointmentService.updateStatus(id, status);
+      
+      // 3. Silently reload behind the scenes to verify final state
+      const list = await appointmentService.getAll(selectedDate);
+      setCitas(list);
+      const allAppts = await appointmentService.getAll('');
+      setTodasLasCitas(allAppts || []);
+    } catch (err) {
+      console.error("Error updating appointment status:", err);
+      alert("No se pudo actualizar el estado de la cita. Reintentando...");
+      loadCitasYPacientes();
+    }
   };
 
   const handleDeleteCita = async (id) => {
@@ -149,10 +246,10 @@ export default function Agenda() {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 select-none">
+    <div className="flex flex-col lg:flex-row gap-6 select-none">
       
-      {/* SECCIÓN IZQUIERDA: LISTADO DE CITAS POR ESTADO (3 columnas) */}
-      <div className="lg:col-span-3 space-y-6">
+      {/* SECCIÓN IZQUIERDA: LISTADO DE CITAS POR ESTADO (3/4 de ancho en desktop, abajo en mobile) */}
+      <div className="w-full lg:w-3/4 order-2 lg:order-1 space-y-6">
         
         {/* Cabecera Interna */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
@@ -167,6 +264,18 @@ export default function Agenda() {
               {citas.length} citas registradas para el día {selectedDate.split('-').reverse().join('/')}
             </p>
           </div>
+
+          {/* Buscador de citas del día */}
+          <div className="flex-1 sm:max-w-[240px]">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar por mascota, dueño..."
+              className="w-full h-10 border border-slate-200 rounded-xl px-4 focus:outline-none focus:border-cyan-400 text-xs font-bold text-slate-700 bg-slate-50/50"
+            />
+          </div>
+
           <button 
             onClick={() => setShowModal(true)}
             className="flex items-center justify-center gap-2 !bg-cyan-400 hover:!bg-cyan-500 !text-white text-[13px] font-extrabold h-11 px-6 rounded-xl shadow-sm transition-all duration-150 active:scale-95 !border-0 cursor-pointer"
@@ -282,14 +391,32 @@ export default function Agenda() {
 
       </div>
 
-      {/* SECCIÓN DERECHA: MINI-CALENDARIO INTERACTIVO (1 columna) */}
-      <div className="space-y-6">
+      {/* SECCIÓN DERECHA: MINI-CALENDARIO INTERACTIVO (1/4 de ancho en desktop, arriba en mobile) */}
+      <div className="w-full lg:w-1/4 order-1 lg:order-2 space-y-6">
         
         {/* Widget del Calendario */}
         <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 space-y-4">
-          <div className="text-center border-b border-slate-100 pb-3">
-            <h4 className="text-xs font-black text-slate-800 tracking-tight">Julio 2026</h4>
-            <p className="text-[9px] text-slate-400 font-bold mt-0.5">Clic en un día para ver sus citas</p>
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <button 
+              type="button"
+              onClick={handlePrevMonth}
+              className="p-1.5 rounded-lg hover:!bg-slate-100 text-slate-500 hover:!text-slate-800 transition border-0 bg-transparent cursor-pointer flex items-center justify-center"
+            >
+              <FiChevronLeft className="w-4 h-4" />
+            </button>
+            <div className="text-center">
+              <h4 className="text-xs font-black text-slate-800 tracking-tight capitalize">
+                {meses[currentMonth]} {currentYear}
+              </h4>
+              <p className="text-[9px] text-slate-400 font-bold mt-0.5">Clic en un día para ver sus citas</p>
+            </div>
+            <button 
+              type="button"
+              onClick={handleNextMonth}
+              className="p-1.5 rounded-lg hover:!bg-slate-100 text-slate-500 hover:!text-slate-800 transition border-0 bg-transparent cursor-pointer flex items-center justify-center"
+            >
+              <FiChevronRight className="w-4 h-4" />
+            </button>
           </div>
 
           {/* Días de la semana */}
@@ -300,43 +427,80 @@ export default function Agenda() {
             <span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sa</span><span>Do</span>
           </div>
 
-          {/* Días del mes (Ejemplo simulador Julio 2026, empieza en Miércoles 1) */}
+          {/* Días del mes dinámicos */}
           <div 
             className="grid grid-cols-7 gap-1.5 text-center text-[10px] font-bold select-none"
             style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px' }}
           >
-            
-            {/* Celdas vacías para desfase con estilo apagado */}
-            <span className="aspect-square flex items-center justify-center text-slate-300 font-normal">29</span>
-            <span className="aspect-square flex items-center justify-center text-slate-300 font-normal">30</span>
-
-            {/* Días 1 al 31 */}
-            {Array.from({ length: 31 }, (_, i) => {
-              const day = i + 1;
-              const dateStr = `2026-07-${day < 10 ? '0' + day : day}`;
-              const isSelected = selectedDate === dateStr;
+            {/* Trailing days del mes anterior */}
+            {(() => {
+              const firstDayIndex = getFirstDayOfMonth(currentYear, currentMonth);
+              const prevMonthIndex = currentMonth === 0 ? 11 : currentMonth - 1;
+              const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+              const daysInPrevMonth = getDaysInMonth(prevYear, prevMonthIndex);
               
-              // Resaltar días que tienen citas registradas
-              const hasCitas = todasLasCitas.some(c => c.fecha === dateStr);
+              return Array.from({ length: firstDayIndex }, (_, i) => {
+                const day = daysInPrevMonth - firstDayIndex + 1 + i;
+                return (
+                  <span key={`prev-${day}`} className="aspect-square flex items-center justify-center text-slate-300 font-normal">
+                    {day}
+                  </span>
+                );
+              });
+            })()}
 
-              return (
-                <button
-                  key={day}
-                  type="button"
-                  onClick={() => setSelectedDate(dateStr)}
-                  className={`aspect-square rounded-xl flex flex-col items-center justify-center relative transition-all duration-200 hover:bg-slate-100 active:scale-90 ${
-                    isSelected 
-                      ? 'bg-gradient-to-tr from-cyan-500 to-teal-400 text-white shadow-md shadow-cyan-500/25' 
-                      : 'text-slate-700 bg-slate-50/40 border border-slate-100 hover:border-slate-200'
-                  }`}
-                >
-                  <span className="text-[11px]">{day}</span>
-                  {hasCitas && (
-                    <span className={`absolute bottom-1 w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-cyan-400 shadow-[0_0_4px_#22d3ee]'}`} />
-                  )}
-                </button>
-              );
-            })}
+            {/* Días del mes actual */}
+            {(() => {
+              const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+              const systemToday = new Date();
+              const todayY = systemToday.getFullYear();
+              const todayM = systemToday.getMonth();
+              const todayD = systemToday.getDate();
+
+              return Array.from({ length: daysInMonth }, (_, i) => {
+                const day = i + 1;
+                const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const isSelected = selectedDate === dateStr;
+                const isToday = currentYear === todayY && currentMonth === todayM && day === todayD;
+                const hasCitas = todasLasCitas.some(c => c.fecha === dateStr);
+
+                return (
+                  <button
+                    key={`curr-${day}`}
+                    type="button"
+                    onClick={() => setSelectedDate(dateStr)}
+                    className={`aspect-square rounded-xl flex flex-col items-center justify-center relative transition-all duration-200 hover:!bg-slate-100 active:scale-90 ${
+                      isSelected 
+                        ? '!bg-gradient-to-tr !from-cyan-500 !to-teal-400 !text-white shadow-md shadow-cyan-500/25 font-extrabold' 
+                        : isToday
+                        ? '!bg-cyan-400 !text-white font-extrabold shadow-sm'
+                        : 'text-slate-700 bg-slate-50/40 border border-slate-100 hover:border-slate-200'
+                    }`}
+                  >
+                    <span className="text-[11px]">{day}</span>
+                    {hasCitas && (
+                      <span className={`absolute bottom-1 w-1.5 h-1.5 rounded-full ${isSelected || isToday ? 'bg-white' : 'bg-cyan-400 shadow-[0_0_4px_#22d3ee]'}`} />
+                    )}
+                  </button>
+                );
+              });
+            })()}
+
+            {/* Leading days del mes siguiente */}
+            {(() => {
+              const firstDayIndex = getFirstDayOfMonth(currentYear, currentMonth);
+              const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+              const remainingCells = (7 - ((firstDayIndex + daysInMonth) % 7)) % 7;
+              
+              return Array.from({ length: remainingCells }, (_, i) => {
+                const day = i + 1;
+                return (
+                  <span key={`next-${day}`} className="aspect-square flex items-center justify-center text-slate-300 font-normal">
+                    {day}
+                  </span>
+                );
+              });
+            })()}
           </div>
 
           {/* Indicadores de colores */}
@@ -368,8 +532,8 @@ export default function Agenda() {
 
       {/* MODAL: REGISTRAR NUEVA CITA */}
       {showModal && createPortal(
-        <div className="fixed inset-0 bg-white z-[9999] overflow-y-auto flex flex-col p-6 sm:p-12 animate-in fade-in slide-in-from-bottom-5 duration-200">
-          <div className="max-w-xl mx-auto w-full flex-1 flex flex-col justify-between">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl border border-slate-150 shadow-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 animate-in fade-in zoom-in-95 duration-200 flex flex-col justify-between">
             <div>
               <div className="border-b border-slate-100 pb-5 flex items-center justify-between">
                 <div>
@@ -390,17 +554,30 @@ export default function Agenda() {
                 
                 {/* Mascota */}
                 <div className="flex flex-col gap-2">
-                  <label className="font-extrabold text-slate-500 uppercase tracking-wider text-[9px]">Seleccionar Mascota</label>
+                  <label className="font-extrabold text-slate-500 uppercase tracking-wider text-[9px]">Buscar Mascota o Dueño</label>
+                  <input
+                    type="text"
+                    value={filtroMascota}
+                    onChange={(e) => setFiltroMascota(e.target.value)}
+                    placeholder="Escribe el nombre de la mascota o dueño para filtrar..."
+                    className="w-full h-10 border border-slate-200 rounded-xl px-4 focus:outline-none focus:border-cyan-400 text-xs font-bold text-slate-700 bg-slate-50/50 mb-1"
+                  />
+                  
+                  <label className="font-extrabold text-slate-500 uppercase tracking-wider text-[9px] mt-1">Seleccionar Mascota ({filteredMascotasForSelect.length} encontradas)</label>
                   <select
                     value={mascotaId}
                     onChange={(e) => setMascotaId(e.target.value)}
                     className="w-full h-10 border border-slate-200 rounded-xl px-4 bg-white focus:outline-none focus:border-cyan-400 text-xs font-bold text-slate-700 bg-slate-50/50 cursor-pointer"
                   >
-                    {mascotas.map(pet => (
-                      <option key={pet.id} value={pet.id}>
-                        🐶 {pet.nombre} ({pet.especie} - {pet.cliente?.nombre || 'Particular'})
-                      </option>
-                    ))}
+                    {filteredMascotasForSelect.length === 0 ? (
+                      <option value="">Ninguna mascota coincide con la búsqueda</option>
+                    ) : (
+                      filteredMascotasForSelect.map(pet => (
+                        <option key={pet.id} value={pet.id}>
+                          🐶 {pet.nombre} ({pet.especie} - {pet.cliente?.nombre || 'Particular'})
+                        </option>
+                      ))
+                    )}
                   </select>
                 </div>
 
@@ -470,7 +647,7 @@ export default function Agenda() {
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
-                    className="flex-1 h-11 border border-slate-200 rounded-xl font-bold text-slate-500 hover:bg-slate-50 transition-all border-0 cursor-pointer"
+                    className="flex-1 h-11 !border !border-slate-200 bg-white rounded-xl font-bold text-slate-500 hover:bg-slate-50 transition-all cursor-pointer"
                   >
                     Cancelar
                   </button>

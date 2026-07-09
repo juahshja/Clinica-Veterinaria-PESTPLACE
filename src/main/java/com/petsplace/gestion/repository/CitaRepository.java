@@ -18,4 +18,9 @@ public interface CitaRepository extends JpaRepository<Cita, Long> {
 
     @Query("SELECT c FROM Cita c LEFT JOIN FETCH c.mascota m LEFT JOIN FETCH m.cliente WHERE c.fecha = :fecha")
     List<Cita> findByFechaWithMascota(@Param("fecha") LocalDate fecha);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional
+    @Query("UPDATE Cita c SET c.veterinario = :nuevoNombre WHERE c.veterinario = :antiguoNombre")
+    void actualizarNombreVeterinario(@Param("antiguoNombre") String antiguoNombre, @Param("nuevoNombre") String nuevoNombre);
 }

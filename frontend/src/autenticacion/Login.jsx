@@ -124,15 +124,8 @@ export default function Login() {
     const [remember, setRemember] = useState(false);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [role, setRole] = useState("admin");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
-
-    const roles = [
-        { key: "admin", label: "Administración" },
-        { key: "vet", label: "Veterinario" },
-        { key: "staff", label: "Personal de atención" },
-    ];
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -174,25 +167,6 @@ export default function Login() {
                         Inicia sesión para continuar
                     </p>
 
-                    {/* Role selector */}
-                    <div className="flex flex-col sm:flex-row gap-2 mb-7">
-                        {roles.map((r) => (
-                            <button
-                                key={r.key}
-                                type="button"
-                                onClick={() => setRole(r.key)}
-                                className="flex-1 text-[0.78rem] font-semibold rounded-[10px] transition-all duration-150 leading-tight px-2 py-2.5"
-                                style={{
-                                    border: role === r.key ? "2px solid #29b6d8" : "1.5px solid #e2eaf0",
-                                    background: role === r.key ? "#e8f6fb" : "#fff",
-                                    color: role === r.key ? "#1a9ab8" : "#7a8fa6",
-                                    cursor: "pointer",
-                                }}
-                            >
-                                {r.label}
-                            </button>
-                        ))}
-                    </div>
 
                     {error && (
                         <div className="notification is-danger is-light p-2 mb-4 text-xs rounded-[10px]" style={{ color: '#d4183d', background: '#fdf2f2', border: '1.5px solid #fde8e8', textAlign: 'center' }}>
